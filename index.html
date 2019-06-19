@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es" dir="ltr">
+
+<head>
+    <meta charset="utf-8">
+    <!-- script requerido para conectar el socket -->
+    <script src="/socket.io/socket.io.js"></script>
+    <title></title>
+    <style media="screen">
+        table{
+            width: 100%;
+        }
+        #mensajes_server{
+            width: 100%;
+        }
+        textarea{
+            padding: 10px;
+            box-sizing: border-box;
+            line-height:200%;
+        }
+    </style>
+</head>
+
+<body>
+    <table>
+        <thead>
+            <tr>
+                <th>Mensajes del servidor</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    <textarea id="mensajes_server" rows="8"></textarea>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <br>
+    <table>
+        <tbody>
+            
+            <tr>
+                <td>Usuario:</td>
+            </tr>
+            <tr>
+                <td>
+                    <input type="text" id="nombre_usuario">
+                </td>
+            </tr>
+            
+            <tr>
+                <td>Mensaje:</td>
+            </tr>
+            <tr>
+                <td>
+                    <input type="text" id="mensaje_usuario">
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                    <button type="button" name="button" onclick="saludar()">Saludar al servidor</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <script type="text/javascript">
+        const textarea = document.getElementById("mensajes_server");
+        const nombre = document.getElementById("nombre_usuario");
+        const mensaje = document.getElementById("mensaje_usuario");
+
+        //instancia del socket y conexion con el servidor de sockets
+        var socket = io.connect('http://localhost:3000', {
+            'forceNew': true
+        });
+
+        //En caso de que llegue un broadcast hacia todos los usuarios que estamos conectados ejecutar el siguiente callback
+        //no es necesario que el evento tenga el nombre broadcast
+        //Esto se puede probar en la misma pc con dos exploradores distintos o con el mismo en ventana privada
+        socket.on("broadcast",function(datos){
+            //este if compara los ids de los sockets y si el socket es diferente al actual avisa la conexion del usuario
+            if(socket.id != datos.id){
+                manejar_mensajes(datos.mensaje + ":" + datos.id);
+            }
+        });
+
+        //El cliente queda a la espera de un evento que dispara el servidor llamado el_server_saluda
+        socket.on('el_server_saluda', function(saludo) {
+            manejar_mensajes(saludo);
+        });
+        //El cliente queda a al espera de un evento del servidor llamado servidor_responde_saludo
+        socket.on("servidor_responde_saludo",function(respuesta){
+            manejar_mensajes(respuesta);
+        });
+
+        socket.on("cargando_mensajes_anteriores", datos => {
+            // for (let i = 0; i < datos.length; i++ ){
+            //     manejar_mensajes(datos[i]);
+            // }
+            console.log("entro");
+        })
+
+
+        function saludar(){
+            //Cuando se ejecuta esta funcion el cliente le envia un mensaje o evento al servidor mediante la instruccion emit
+            socket.emit("usuario_saludando",nombre.value, mensaje.value);
+        }
+
+        function manejar_mensajes(mensaje){
+            textarea.value = textarea.value + "\n" + mensaje;
+            textarea.scrollTop = textarea.scrollHeight
+        }
+    </script>
+</body>
+
+</html>
