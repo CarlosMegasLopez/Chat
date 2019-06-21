@@ -63,12 +63,25 @@
                     <button type="button" name="button" onclick="saludar()">Saludar al servidor</button>
                 </td>
             </tr>
+
+            <tr>
+                <td>Usuarios Conectados:</td>
+            </tr>
+            <tr>
+                <td>
+                    <textarea id="usuarios_online" rows="8"></textarea>
+                </td>
+            </tr>
+
         </tbody>
     </table>
     <script type="text/javascript">
         const textarea = document.getElementById("mensajes_server");
         const nombre = document.getElementById("nombre_usuario");
         const mensaje = document.getElementById("mensaje_usuario");
+
+        const textarea2 = document.getElementById("usuarios_online");
+       
 
         //instancia del socket y conexion con el servidor de sockets
         var socket = io.connect('http://localhost:3000', {
@@ -89,21 +102,33 @@
         socket.on('el_server_saluda', function(saludo) {
             manejar_mensajes(saludo);
         });
-        //El cliente queda a al espera de un evento del servidor llamado servidor_responde_saludo
+
+        //El cliente queda a la espera de un evento del servidor llamado servidor_responde_saludo
         socket.on("servidor_responde_saludo",function(respuesta){
             manejar_mensajes(respuesta);
         });
 
         socket.on("cargando_mensajes_anteriores", datos => {
-            // for (let i = 0; i < datos.length; i++ ){
-            //     manejar_mensajes(datos[i]);
-            // }
-            console.log("entro");
+            for (let i = 0; i < datos.length; i++ ){
+                 manejar_mensajes(datos[i].usuario + ": " + datos[i].mensaje);
+             }
+            console.log(datos);
         })
 
+        socket.on("usuarios", datos => {
+            textarea2.value = ""; //limpio el text area 2 para que no me sobreescriba todos los datos del arreglo
+            console.log(datos);
+            for (let i = 0; i < datos.length; i++ ){
+                textarea2.value = textarea2.value + "\n" + datos[i];
+                textarea2.scrollTop = textarea2.scrollHeight
+             }
+        })
 
         function saludar(){
             //Cuando se ejecuta esta funcion el cliente le envia un mensaje o evento al servidor mediante la instruccion emit
+
+            socket.emit("nuevo_usuario", nombre.value);
+
             socket.emit("usuario_saludando",nombre.value, mensaje.value);
         }
 
@@ -111,6 +136,8 @@
             textarea.value = textarea.value + "\n" + mensaje;
             textarea.scrollTop = textarea.scrollHeight
         }
+
+
     </script>
 </body>
 

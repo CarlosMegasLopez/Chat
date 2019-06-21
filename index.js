@@ -39,18 +39,63 @@ const connection = mongoose.connect(dbURI, opciones_conexion, function(err, db) 
 mongoose.connection.on('connected', function() {
     //Configuraciones iniciales del sistema
     console.log('Mongoose conectado ');
+
+    var usuariosconectados = [];
     //Cuando io detecte una conexón en el frontend, se ejecutara el siguiente callback
     //socket es el socket del cliente
     io.on('connection', function(socket) {
+        //clientesconectados.push(socket);
+
         console.log('Un cliente se ha conectado: '+ socket.id);
 
-        let cargarmensajes = Usuario.find({});
-        //socket.emit("cargando_mensajes_anteriores", cargarmensajes);
-        console.log("cargar mensajes", cargarmensajes);
+        // clientesconectados.push(cliente); 
+        // cliente.on('disconnect', function() {
+        //     clientesconectados.splice(clientesconectados.indexOf(cliente), 1);
+        // });
 
+        // socket.on('desconectado', function() {
+        //     console.log('Un cliente se ha desconectado: '+ socket.id);
+        //     var i = clientesconectados.indexOf(socket);
+        //     clientesconectados.splice(i, 1);
+        //  });
+
+        socket.on("nuevo_usuario", (datos) => {
+            console.log(datos);
+           if (usuariosconectados.indexOf(datos) != -1 ){
+            console.log("falso");
+           } else {
+                console.log("verdadero");
+                socket.usuario = datos;
+                usuariosconectados.push(socket.usuario);
+                console.log("usuarios", usuariosconectados);
+                //io.sockets.emit('broadcast',{ id: socket.usuario, mensaje: "Se conecto"});
+                actualizarusuariosconectados();
+           } 
+        });
+
+        socket.on("disconnect", (datos) => {
+           if(!socket.usuario) return;
+           usuariosconectados.splice(usuariosconectados.indexOf(socket.usuario), 1);
+           actualizarusuariosconectados();
+         });
+
+         function actualizarusuariosconectados() {
+            io.sockets.emit("usuarios", usuariosconectados);
+        }
+
+        let cargarmensajes = Usuario.find({}, function(err, resultados){
+            if (!err){
+                socket.emit("cargando_mensajes_anteriores", resultados);
+                } else{throw err;}
+             }
+        );
+    
         //Cuando un cliente nuevo se conecta le avisa a todos que se acaba de conectar
         //Esto se puede probar en la misma pc con dos exploradores distintos o con el mismo en ventana privada
         io.sockets.emit('broadcast',{ id: socket.id, mensaje: "Se conecto el cliente"});
+        
+        io.sockets.emit("usuarios", usuariosconectados);
+        //io.sockets.emit('desconectado',{ id: socket.id, mensaje: "Se desconecto el cliente"});
 
         //Cuando el cliente se conecta el servidor le saluda
         socket.emit("el_server_saluda",`Hola soy el servidor que esta corriendo en el puerto 3000 y tú tienes el socket id: ${socket.id}`);
@@ -74,9 +119,8 @@ mongoose.connection.on('connected', function() {
                 }).catch(function(err){
                     console.log("No se pudo guardar el valor en la base de datos");
                                         })
-
         });
-        
+
     });
 
 });
