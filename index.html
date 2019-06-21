@@ -20,6 +20,13 @@
         }
         button{
             background: blue;
+            color: white;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        table tbody td textarea,
+        table tbody td input{
+            width: 100%;
         }
             
     </style>
@@ -58,7 +65,7 @@
             </tr>
             <tr>
                 <td>
-                    <input type="text" id="mensaje_usuario" placeholder="Escribe un mensaje">
+                    <textarea id="mensaje_usuario" cols="30" rows="3"></textarea>
                 </td>
             </tr>
 
@@ -73,7 +80,9 @@
             </tr>
             <tr>
                 <td>
-                    <textarea id="usuarios_online" rows="8"></textarea>
+                    <!-- <textarea id="usuarios_online" rows="8"></textarea> -->
+                    <ul id="usuarios_online"></ul>
+                    </ul>
                 </td>
             </tr>
 
@@ -84,7 +93,7 @@
         const nombre = document.getElementById("nombre_usuario");
         const mensaje = document.getElementById("mensaje_usuario");
 
-        const textarea2 = document.getElementById("usuarios_online");
+        const lista_usuarios = document.getElementById("usuarios_online");
        
 
         //instancia del socket y conexion con el servidor de sockets
@@ -120,12 +129,16 @@
         })
 
         socket.on("usuarios", datos => {
-            textarea2.value = ""; //limpio el text area 2 para que no me sobreescriba todos los datos del arreglo
+            lista_usuarios.innerHTML = ''; //limpio el text area 2 para que no me sobreescriba todos los datos del arreglo
             console.log(datos);
             for (let i = 0; i < datos.length; i++ ){
-                textarea2.value = textarea2.value + "\n" + datos[i];
-                textarea2.scrollTop = textarea2.scrollHeight
-             }
+                var node = document.createElement("li");                 // Create a <li> node
+                var textnode = document.createTextNode(datos[i]);         // Create a text node
+                node.appendChild(textnode);
+                lista_usuarios.appendChild(node);
+                // textarea2.value = textarea2.value + "\n" + datos[i];
+                // textarea2.scrollTop = textarea2.scrollHeight
+            }
         })
 
         function saludar(){
